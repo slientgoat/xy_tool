@@ -22,6 +22,71 @@ defmodule Tool do
     |> Timex.format!("{YYYY}-{0M}-{0D} {h24}:{0m}:{0s}")
   end
 
+#  # 获取|设置用户的所在的时区差值(单位/秒)
+#  def set_tz_diff(val), do: Process.put(:timezone_diff, val)
+#
+#  def tz_diff(), do: Process.get(:timezone_diff) || Timex.local().utc_offset
+
+
+  # 获取访客所在时区与格林时区的差值,单位秒（默认服务器所在的时区）
+  def timezone_diff(timezone_diff) do
+    cond do
+      is_binary(timezone_diff) ->
+        String.to_integer(timezone_diff)
+
+      is_nil(timezone_diff) ->
+        Timex.local().utc_offset
+
+      true ->
+        timezone_diff
+    end
+  end
+
+  # utc转前端本地时区时间
+  def to_local_tz(utc_time, tz_diff_time),
+      do: Timex.shift(utc_time, seconds: tz_diff_time)
+
+  # 前端本地时区转utc时间
+  def from_local_tz(local_time, tz_diff_time),
+      do: Timex.shift(local_time, seconds: -tz_diff_time)
+
+  # utc转前端本地时区时间戳
+  def to_local_ux(utc_time, tz_diff_time),
+      do: to_local_tz(utc_time, tz_diff_time) |> Timex.to_unix()
+
+  def to_local_date(utc_time, tz_diff_time),
+      do: to_local_tz(utc_time, tz_diff_time) |> NaiveDateTime.to_date()
+
+  def to_local_tz_str(time, tz_diff) do
+    to_local_tz(time, tz_diff)
+    |> to_hyphen_ymdhms_string()
+  end
+
+  @doc "将时间转为 2017-01-01 00：00：00 格式"
+  def format_time(naive_time) ,do: Timex.format!(naive_time,"{YYYY}-{0M}-{0D} {h24}:{m}:{s}")
+  @doc "将时间转为 NaiveDateTime 格式"
+  def parse_time(str_time) ,do: Timex.parse!(str_time, "{YYYY}-{0M}-{0D} {h24}:{m}:{s}")
+
+  def to_dot_time_string(naive_time), do: Timex.format!(naive_time, "{YYYY}.{0M}.{0D} {h24}:{m}")
+  def string_to_dot_time(str_time), do: Timex.parse!(str_time, "{YYYY}.{0M}.{0D} {h24}:{m}")
+
+  def to_dot_ymdhms_string(naive_time),
+      do: Timex.format!(naive_time, "{YYYY}.{0M}.{0D} {h24}:{m}:{s}")
+
+  def to_dot_hm_string(naive_time), do: Timex.format!(naive_time, "{h24}:{m}")
+
+  def to_hyphen_ymdhms_string(naive_time),
+      do: Timex.format!(naive_time, "{YYYY}-{0M}-{0D} {h24}:{m}:{s}")
+
+  @doc """
+   switch "2017-06-01 18:30:00" or ~N[2017-06-01 18:30:00] to ~N[2017-06-01 18:30:00]
+  """
+  def hyphen_to_naive(hyphen_time) do
+    if is_binary(hyphen_time),
+       do: Timex.parse!(hyphen_time, "{YYYY}-{0M}-{D} {h24}:{m}:{s}"),
+       else: hyphen_time
+  end
+
 
   @doc """
   过滤包含指定filter的键值对
@@ -246,4 +311,32 @@ defmodule Tool do
 
   defp to_atom_map(map) when is_map(map), do: Map.new(map, fn {k,v} -> {String.to_atom(k),to_atom_map(v)} end)
   defp to_atom_map(v), do: v
+
+
+
+  @doc """
+  Decimal 转 Integer
+  """
+  def parse_decimal(%Decimal{} = decimal) do
+    Decimal.round(decimal)
+    |> Decimal.to_integer()
+  end
+
+  def parse_decimal(nil), do: 0
+  def parse_decimal(integer), do: integer
+
+  def get_rate(val1, val2, decimal \\ 2) do
+    val1 =parse_decimal(val1)
+    val2 =parse_decimal(val2)
+
+    case val2 != 0 do
+      true ->
+        Float.floor(val1 / val2, decimal)
+
+      false ->
+        0.0
+    end
+  end
+
+
 end
