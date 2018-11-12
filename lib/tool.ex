@@ -339,4 +339,29 @@ defmodule Tool do
   end
 
 
+  @doc """
+  pack_params(%{pa: 1, pb: "ok", pc: :a}) == "pa=1&pb=ok&pc=a"
+  """
+  def pack_params(params) do
+    Enum.map(params, fn {name, value} -> to_string(name) <> "=" <> to_string(value) end)
+    |> Enum.join("&")
+  end
+
+
+  def gen_order_id(n \\ 6) do
+    {{y,mon,d},{h,m,s}} = NaiveDateTime.to_erl(Timex.shift(NaiveDateTime.utc_now(), hours: 8))
+    stime = fitzero(y, 4) <> fitzero(mon,2) <> fitzero(d, 2) <> fitzero(h, 2) <> fitzero(m, 2) <> fitzero(s, 2)
+    stime <> random_int_string(n)
+  end
+
+  defp fitzero(i, n) do
+    s = to_string(i)
+    case n - String.length(s) do
+      x when x <= 0 -> s;
+      n0 -> String.duplicate("0", n0) <> s
+    end
+  end
+  defp random_int_string(n) do
+    1..n |> Enum.map(fn _ -> :rand.uniform(10)-1+?0 end) |> to_string
+  end
 end
