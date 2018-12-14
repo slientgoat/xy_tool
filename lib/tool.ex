@@ -301,7 +301,11 @@ defmodule Tool do
   @doc """
     md5签名
   """
-  def sign_md5(str), do: Base.encode16(:erlang.md5(str), case: :lower)
+  def sign_md5(str) when is_binary(str), do: Base.encode16(:erlang.md5(str), case: :lower)
+  def sign_md5(str),
+      do: :erlang.term_to_binary(str)
+          |> sign_md5()
+
 
   @doc """
     ip转int
