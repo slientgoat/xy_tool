@@ -110,7 +110,8 @@ defmodule Tool do
   @doc """
   过滤包含指定filter的键值对
   """
-  @spec map_filter_by_val(map, charlist) :: map
+  @spec map_filter_by_val(map | nil, binary) :: map
+  def map_filter_by_val(nil, _filter), do: %{}
   def map_filter_by_val(params, filter) do
     Map.new(Enum.filter(params, fn {_k, v} -> v != filter end))
   end
